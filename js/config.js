@@ -2,8 +2,8 @@
  * 本地开发：将下方占位符替换为你的高德开放平台凭据（勿将真实值提交到公开仓库）。
  * Web 端（JS API）Key + 安全密钥（securityJsCode）；控制台需配置 Referer 白名单。
  */
-export const AMAP_KEY = "a4d84efd8b5aae8c37a52034a0c8a7fd";
-export const AMAP_SECURITY_JS_CODE = "d77e1f0ef3ba1996676fc197f4cfd17e";
+export const AMAP_KEY = "YOUR_AMAP_KEY_HERE";
+export const AMAP_SECURITY_JS_CODE = "YOUR_AMAP_SECURITY_JS_CODE_HERE";
 
 /**
  * 高德天气 API（Web 服务）Key
@@ -12,7 +12,7 @@ export const AMAP_SECURITY_JS_CODE = "d77e1f0ef3ba1996676fc197f4cfd17e";
  *
  * 提示：高德控制台里通常需要创建「Web服务」类型的 Key（与 JS API Key 不是同一个）。
  */
-export const AMAP_WEBSERVICE_KEY = "05510639bfa120ad8b708d0ea51ab283";
+export const AMAP_WEBSERVICE_KEY = "YOUR_AMAP_WEBSERVICE_KEY_HERE";
 
 /**
  * 大模型 API（OpenAI SDK 兼容格式）
@@ -23,6 +23,6 @@ export const AMAP_WEBSERVICE_KEY = "05510639bfa120ad8b708d0ea51ab283";
  * - 智谱：`https://open.bigmodel.cn/api/paas/v4/chat/completions`
  * - DeepSeek：`https://api.deepseek.com/chat/completions`（以官方为准）
  */
-export const LLM_API_KEY = "f1b507367cf34ac6b715f7d1f9ed8a97.78oXqW3zzgebYItJ";
-export const LLM_BASE_URL = "https://open.bigmodel.cn/api/paas/v4/chat/completions";
-export const LLM_MODEL = "glm-5.1";
+export const LLM_API_KEY = "YOUR_LLM_API_KEY_HERE";
+export const LLM_BASE_URL = "YOUR_LLM_BASE_URL_HERE";
+export const LLM_MODEL = "YOUR_LLM_MODEL_HERE";
