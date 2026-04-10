@@ -76,7 +76,11 @@ function addChatMessage(role, content, variant = role) {
   if (!elChatMessages) return;
   const div = document.createElement("div");
   div.className = `msg ${variant}`;
-  div.textContent = content;
+  if (variant === "assistant") {
+    div.innerHTML = renderMarkdown(content);
+  } else {
+    div.textContent = content;
+  }
   elChatMessages.appendChild(div);
   elChatMessages.scrollTop = elChatMessages.scrollHeight;
 }
@@ -129,6 +133,101 @@ function buildContextText() {
   }
 
   return parts.join("\n");
+}
+
+function escapeHtml(unsafe) {
+  return String(unsafe)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll("\"", "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function renderInlineMarkdown(text) {
+  let s = escapeHtml(text);
+  // inline code
+  s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
+  // bold
+  s = s.replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>");
+  // italic (simple)
+  s = s.replace(/(^|[^*])\*([^*]+)\*(?!\*)/g, "$1<em>$2</em>");
+  return s;
+}
+
+/**
+ * 安全、轻量的 Markdown 渲染（覆盖实验常见输出：段落/加粗/斜体/列表/代码）。
+ * - 先转义 HTML，再将 Markdown 转为受控标签
+ */
+function renderMarkdown(md) {
+  const lines = String(md ?? "").replaceAll("\r\n", "\n").split("\n");
+  const out = [];
+  let i = 0;
+
+  const flushParagraph = (buf) => {
+    const text = buf.join(" ").trim();
+    if (text) out.push(`<p>${renderInlineMarkdown(text)}</p>`);
+  };
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // blank line
+    if (!line.trim()) {
+      i += 1;
+      continue;
+    }
+
+    // headings (#, ##, ###)
+    const h = line.match(/^(#{1,3})\s+(.*)$/);
+    if (h) {
+      const level = h[1].length;
+      out.push(`<h${level}>${renderInlineMarkdown(h[2].trim())}</h${level}>`);
+      i += 1;
+      continue;
+    }
+
+    // unordered list
+    if (/^\s*[-*]\s+/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*[-*]\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*[-*]\s+/, ""));
+        i += 1;
+      }
+      out.push(
+        `<ul>${items
+          .map((t) => `<li>${renderInlineMarkdown(t.trim())}</li>`)
+          .join("")}</ul>`,
+      );
+      continue;
+    }
+
+    // ordered list
+    if (/^\s*\d+\.\s+/.test(line)) {
+      const items = [];
+      while (i < lines.length && /^\s*\d+\.\s+/.test(lines[i])) {
+        items.push(lines[i].replace(/^\s*\d+\.\s+/, ""));
+        i += 1;
+      }
+      out.push(
+        `<ol>${items
+          .map((t) => `<li>${renderInlineMarkdown(t.trim())}</li>`)
+          .join("")}</ol>`,
+      );
+      continue;
+    }
+
+    // paragraph (collect until blank line)
+    const buf = [];
+    while (i < lines.length && lines[i].trim() && !/^(#{1,3})\s+/.test(lines[i])) {
+      if (/^\s*[-*]\s+/.test(lines[i]) || /^\s*\d+\.\s+/.test(lines[i])) break;
+      buf.push(lines[i].trim());
+      i += 1;
+    }
+    flushParagraph(buf);
+  }
+
+  return out.join("");
 }
 
 async function callChatCompletion({ userText }) {
@@ -282,7 +381,7 @@ function main() {
         // 替换最后一条 meta
         if (elChatMessages?.lastElementChild) {
           elChatMessages.lastElementChild.className = "msg assistant";
-          elChatMessages.lastElementChild.textContent = answer;
+          elChatMessages.lastElementChild.innerHTML = renderMarkdown(answer);
         } else {
           addChatMessage("assistant", answer);
         }
@@ -408,7 +507,7 @@ function main() {
 
       showHint(
         hasWeather
-          ? "点击地图任意位置可选点，将显示经纬度、地名，并自动展示天气。"
+          ? "点击地图任意位置可选点，将显示经纬度、地名、天气。"
           : "点击地图任意位置可选点，将显示经纬度与地名（天气未配置）。",
       );
     })

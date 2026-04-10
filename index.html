@@ -9,35 +9,57 @@
   <body>
     <header>
       <h1>地图天气 AI 助手</h1>
-      <p>Lab 3-1 · 第一轮：嵌入高德地图，点击获取经纬度（含逆地理编码显示地名，对齐评分）</p>
     </header>
     <main class="app">
       <section class="content">
         <p id="hint" class="hint panel">正在初始化…</p>
         <div id="map" class="panel" style="padding: 0; border: none"></div>
-        <section class="panel" aria-live="polite">
-          <h2>选中位置</h2>
-          <dl class="pick-info">
-            <dt>经纬度</dt>
-            <dd class="coords" id="coords">尚未选点</dd>
-            <dt>地名</dt>
-            <dd class="address" id="address">—</dd>
-          </dl>
-        </section>
-        <section class="panel" aria-live="polite">
-          <h2>当前天气</h2>
-          <dl class="pick-info">
-            <dt>状态</dt>
-            <dd class="weather" id="weatherStatus">—</dd>
-            <dt>温度</dt>
-            <dd class="weather" id="weatherTemp">—</dd>
-            <dt>风</dt>
-            <dd class="weather" id="weatherWind">—</dd>
-            <dt>湿度</dt>
-            <dd class="weather" id="weatherHumidity">—</dd>
-            <dt>观测时间</dt>
-            <dd class="weather" id="weatherObsTime">—</dd>
-          </dl>
+        <section class="info-grid" aria-label="地点与天气信息">
+          <section class="panel info-card" aria-live="polite">
+            <div class="card-head">
+              <h2>选中位置</h2>
+              <span class="card-badge">地图选点</span>
+            </div>
+            <dl class="stats">
+              <div class="stat">
+                <dt>经纬度</dt>
+                <dd class="value mono" id="coords">尚未选点</dd>
+              </div>
+              <div class="stat">
+                <dt>地名</dt>
+                <dd class="value" id="address">—</dd>
+              </div>
+            </dl>
+          </section>
+
+          <section class="panel info-card" aria-live="polite">
+            <div class="card-head">
+              <h2>当前天气</h2>
+              <span class="card-badge">实时</span>
+            </div>
+            <dl class="stats two-col">
+              <div class="stat">
+                <dt>状态</dt>
+                <dd class="value" id="weatherStatus">—</dd>
+              </div>
+              <div class="stat">
+                <dt>温度</dt>
+                <dd class="value strong" id="weatherTemp">—</dd>
+              </div>
+              <div class="stat">
+                <dt>风</dt>
+                <dd class="value" id="weatherWind">—</dd>
+              </div>
+              <div class="stat">
+                <dt>湿度</dt>
+                <dd class="value" id="weatherHumidity">—</dd>
+              </div>
+              <div class="stat span-2">
+                <dt>观测时间</dt>
+                <dd class="value" id="weatherObsTime">—</dd>
+              </div>
+            </dl>
+          </section>
         </section>
       </section>
 
