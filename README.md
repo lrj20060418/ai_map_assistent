@@ -17,6 +17,9 @@
    - `YOUR_AMAP_KEY_HERE`
    - `YOUR_AMAP_SECURITY_JS_CODE_HERE`
    - `YOUR_AMAP_WEBSERVICE_KEY_HERE`
+   - `YOUR_LLM_API_KEY_HERE`
+   - `YOUR_LLM_BASE_URL_HERE`（填完整的 chat/completions 地址）
+   - `YOUR_LLM_MODEL_HERE`
 4. 用任意静态服务器打开本目录（双击打开 `file://` 可能受限于部分浏览器策略，建议本地 HTTP 服务）：
    - VS Code：Live Server
    - 或：`npx serve .`（在项目根目录 `lab3` 下执行）

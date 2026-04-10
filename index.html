@@ -11,33 +11,55 @@
       <h1>地图天气 AI 助手</h1>
       <p>Lab 3-1 · 第一轮：嵌入高德地图，点击获取经纬度（含逆地理编码显示地名，对齐评分）</p>
     </header>
-    <main>
-      <p id="hint" class="hint panel">正在初始化…</p>
-      <div id="map" class="panel" style="padding: 0; border: none"></div>
-      <section class="panel" aria-live="polite">
-        <h2>选中位置</h2>
-        <dl class="pick-info">
-          <dt>经纬度</dt>
-          <dd class="coords" id="coords">尚未选点</dd>
-          <dt>地名</dt>
-          <dd class="address" id="address">—</dd>
-        </dl>
+    <main class="app">
+      <section class="content">
+        <p id="hint" class="hint panel">正在初始化…</p>
+        <div id="map" class="panel" style="padding: 0; border: none"></div>
+        <section class="panel" aria-live="polite">
+          <h2>选中位置</h2>
+          <dl class="pick-info">
+            <dt>经纬度</dt>
+            <dd class="coords" id="coords">尚未选点</dd>
+            <dt>地名</dt>
+            <dd class="address" id="address">—</dd>
+          </dl>
+        </section>
+        <section class="panel" aria-live="polite">
+          <h2>当前天气</h2>
+          <dl class="pick-info">
+            <dt>状态</dt>
+            <dd class="weather" id="weatherStatus">—</dd>
+            <dt>温度</dt>
+            <dd class="weather" id="weatherTemp">—</dd>
+            <dt>风</dt>
+            <dd class="weather" id="weatherWind">—</dd>
+            <dt>湿度</dt>
+            <dd class="weather" id="weatherHumidity">—</dd>
+            <dt>观测时间</dt>
+            <dd class="weather" id="weatherObsTime">—</dd>
+          </dl>
+        </section>
       </section>
-      <section class="panel" aria-live="polite">
-        <h2>当前天气</h2>
-        <dl class="pick-info">
-          <dt>状态</dt>
-          <dd class="weather" id="weatherStatus">—</dd>
-          <dt>温度</dt>
-          <dd class="weather" id="weatherTemp">—</dd>
-          <dt>风</dt>
-          <dd class="weather" id="weatherWind">—</dd>
-          <dt>湿度</dt>
-          <dd class="weather" id="weatherHumidity">—</dd>
-          <dt>观测时间</dt>
-          <dd class="weather" id="weatherObsTime">—</dd>
-        </dl>
-      </section>
+
+      <aside class="sidebar panel" aria-label="AI 对话侧栏">
+        <h2>AI 对话</h2>
+        <p class="sidebar-hint" id="chatHint">点击地图选点后再提问，AI 会自动带上该地点的天气上下文。</p>
+        <div class="chat" id="chatMessages" role="log" aria-live="polite" aria-relevant="additions"></div>
+        <form class="chat-form" id="chatForm">
+          <label class="sr-only" for="chatInput">输入你的问题</label>
+          <textarea
+            id="chatInput"
+            class="chat-input"
+            placeholder="例如：今天适合在这里户外活动吗？需要带伞吗？"
+            rows="3"
+            required
+          ></textarea>
+          <div class="chat-actions">
+            <button type="submit" class="chat-send" id="chatSend">发送</button>
+            <button type="button" class="chat-clear" id="chatClear">清空</button>
+          </div>
+        </form>
+      </aside>
     </main>
     <script src="https://webapi.amap.com/loader.js"></script>
     <script type="module" src="js/app.js"></script>

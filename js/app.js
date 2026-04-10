@@ -1,4 +1,11 @@
-import { AMAP_KEY, AMAP_SECURITY_JS_CODE, AMAP_WEBSERVICE_KEY } from "./config.js";
+import {
+  AMAP_KEY,
+  AMAP_SECURITY_JS_CODE,
+  AMAP_WEBSERVICE_KEY,
+  LLM_API_KEY,
+  LLM_BASE_URL,
+  LLM_MODEL,
+} from "./config.js";
 
 const mapContainerId = "map";
 const elCoords = document.getElementById("coords");
@@ -9,6 +16,12 @@ const elWeatherTemp = document.getElementById("weatherTemp");
 const elWeatherWind = document.getElementById("weatherWind");
 const elWeatherHumidity = document.getElementById("weatherHumidity");
 const elWeatherObsTime = document.getElementById("weatherObsTime");
+const elChatHint = document.getElementById("chatHint");
+const elChatMessages = document.getElementById("chatMessages");
+const elChatForm = document.getElementById("chatForm");
+const elChatInput = document.getElementById("chatInput");
+const elChatSend = document.getElementById("chatSend");
+const elChatClear = document.getElementById("chatClear");
 
 function showHint(message) {
   if (elHint) elHint.textContent = message;
@@ -51,6 +64,116 @@ function setSelectionUI(lng, lat, addressText) {
   elAddress.textContent = addressText || "解析中…";
 }
 
+/** @type {{lng:number,lat:number,address?:string,adcode?:string}|null} */
+let currentSelection = null;
+/** @type {{weather?:string,temperature?:string,winddirection?:string,windpower?:string,humidity?:string,reporttime?:string}|null} */
+let currentWeather = null;
+
+/** @type {{role:"user"|"assistant", content:string}[]} */
+const chatHistory = [];
+
+function addChatMessage(role, content, variant = role) {
+  if (!elChatMessages) return;
+  const div = document.createElement("div");
+  div.className = `msg ${variant}`;
+  div.textContent = content;
+  elChatMessages.appendChild(div);
+  elChatMessages.scrollTop = elChatMessages.scrollHeight;
+}
+
+function setChatHint(text) {
+  if (elChatHint) elChatHint.textContent = text;
+}
+
+function validateLLMConfig() {
+  if (
+    !LLM_API_KEY ||
+    LLM_API_KEY.includes("YOUR_LLM") ||
+    !LLM_BASE_URL ||
+    LLM_BASE_URL.includes("YOUR_LLM") ||
+    !LLM_MODEL ||
+    LLM_MODEL.includes("YOUR_LLM")
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function buildContextText() {
+  const sel = currentSelection;
+  const w = currentWeather;
+  const parts = [];
+
+  if (!sel) {
+    parts.push("用户尚未在地图上选点。");
+  } else {
+    parts.push(`用户当前选择的位置：${sel.address ?? "（地名未知）"}`);
+    parts.push(`经纬度：${sel.lng.toFixed(6)}, ${sel.lat.toFixed(6)}`);
+    if (sel.adcode) parts.push(`adcode：${sel.adcode}`);
+  }
+
+  if (!w) {
+    parts.push("当前天气：尚未获取到天气数据。");
+  } else {
+    const temp = w.temperature != null ? `${w.temperature}°C` : "未知";
+    const weather = w.weather ?? "未知";
+    const wind =
+      w.winddirection && w.windpower
+        ? `${w.winddirection} ${w.windpower}`
+        : "未知";
+    const hum = w.humidity != null ? `${w.humidity}%` : "未知";
+    const time = w.reporttime ?? "未知";
+    parts.push(
+      `当前天气：${weather}，温度 ${temp}，湿度 ${hum}，风 ${wind}，观测时间 ${time}。`,
+    );
+  }
+
+  return parts.join("\n");
+}
+
+async function callChatCompletion({ userText }) {
+  const systemPrompt =
+    "你是一个生活出行助手。你会基于用户当前位置与天气信息，给出具体、可执行的建议。" +
+    "回答要中文、简洁、可操作；必要时给出注意事项。";
+
+  const contextText = buildContextText();
+
+  const messages = [
+    { role: "system", content: systemPrompt },
+    { role: "system", content: `上下文信息：\n${contextText}` },
+    ...chatHistory,
+    { role: "user", content: userText },
+  ];
+
+  const res = await fetch(LLM_BASE_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${LLM_API_KEY}`,
+    },
+    body: JSON.stringify({
+      model: LLM_MODEL,
+      messages,
+      temperature: 0.6,
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => "");
+    throw new Error(`LLM HTTP ${res.status}: ${text}`);
+  }
+
+  const data = await res.json();
+  const content =
+    data?.choices?.[0]?.message?.content ??
+    data?.choices?.[0]?.delta?.content ??
+    "";
+  if (!content) {
+    throw new Error("LLM 返回为空（未找到 choices[0].message.content）");
+  }
+  return content;
+}
+
 async function fetchAmapWeatherLive({ adcode }) {
   const url = new URL("https://restapi.amap.com/v3/weather/weatherInfo");
   url.searchParams.set("city", adcode);
@@ -86,6 +209,7 @@ async function fetchAmapWeatherLive({ adcode }) {
 }
 
 function renderAmapWeatherLive(live) {
+  currentWeather = live ?? null;
   const status = live?.weather ?? "—";
   const temp = live?.temperature != null ? `${live.temperature} °C` : "—";
   const wind =
@@ -116,6 +240,75 @@ function main() {
   }
 
   showHint("正在加载地图…");
+  setChatHint("点击地图选点后再提问，AI 会自动带上该地点的天气上下文。");
+  addChatMessage("assistant", "你好！先在地图上点选一个位置，然后问我天气相关的问题吧。");
+
+  if (elChatClear) {
+    elChatClear.addEventListener("click", () => {
+      chatHistory.length = 0;
+      if (elChatMessages) elChatMessages.innerHTML = "";
+      addChatMessage("assistant", "已清空对话。请重新提问。", "meta");
+    });
+  }
+
+  if (elChatForm) {
+    elChatForm.addEventListener("submit", async (evt) => {
+      evt.preventDefault();
+      const text = (elChatInput?.value ?? "").trim();
+      if (!text) return;
+
+      if (!validateLLMConfig()) {
+        addChatMessage(
+          "assistant",
+          "未配置大模型参数。请在 js/config.js 中填写 LLM_API_KEY、LLM_BASE_URL、LLM_MODEL。",
+        );
+        return;
+      }
+
+      if (!currentSelection) {
+        addChatMessage("assistant", "请先在地图上点击选择一个地点。");
+        return;
+      }
+
+      if (elChatSend) elChatSend.disabled = true;
+      if (elChatInput) elChatInput.disabled = true;
+
+      addChatMessage("user", text);
+      chatHistory.push({ role: "user", content: text });
+      addChatMessage("assistant", "思考中…", "meta");
+
+      try {
+        const answer = await callChatCompletion({ userText: text });
+        // 替换最后一条 meta
+        if (elChatMessages?.lastElementChild) {
+          elChatMessages.lastElementChild.className = "msg assistant";
+          elChatMessages.lastElementChild.textContent = answer;
+        } else {
+          addChatMessage("assistant", answer);
+        }
+        chatHistory.push({ role: "assistant", content: answer });
+      } catch (err) {
+        console.error("[LLM] 调用失败:", err);
+        if (elChatMessages?.lastElementChild) {
+          elChatMessages.lastElementChild.className = "msg assistant";
+          elChatMessages.lastElementChild.textContent =
+            "AI 调用失败：请检查 LLM_BASE_URL / Key / 模型名，或查看控制台错误信息。";
+        } else {
+          addChatMessage(
+            "assistant",
+            "AI 调用失败：请检查 LLM_BASE_URL / Key / 模型名，或查看控制台错误信息。",
+          );
+        }
+      } finally {
+        if (elChatSend) elChatSend.disabled = false;
+        if (elChatInput) elChatInput.disabled = false;
+        if (elChatInput) {
+          elChatInput.value = "";
+          elChatInput.focus();
+        }
+      }
+    });
+  }
 
   AMapLoader.load({
     key: AMAP_KEY,
@@ -137,6 +330,7 @@ function main() {
         const lat = e.lnglat.getLat();
         console.log("[地图选点] 经纬度:", { lng, lat });
         setSelectionUI(lng, lat, "解析中…");
+        currentSelection = { lng, lat };
 
         if (marker) {
           map.remove(marker);
@@ -152,6 +346,8 @@ function main() {
             console.log("[地图选点] 地名:", addr);
 
             const adcode = result?.regeocode?.addressComponent?.adcode;
+            currentSelection = { lng, lat, address: addr, adcode };
+            setChatHint("已更新选点与天气上下文。现在可以在右侧提问。");
             if (hasWeather) {
               if (!adcode) {
                 setWeatherUI({
@@ -161,6 +357,7 @@ function main() {
                   humidity: "—",
                   obsTime: "—",
                 });
+                currentWeather = null;
                 console.warn("[天气] 缺少 adcode，无法调用高德天气");
                 return;
               }
@@ -180,6 +377,7 @@ function main() {
                 })
                 .catch((err) => {
                   console.error("[天气] 拉取失败:", err);
+                  currentWeather = null;
                   setWeatherUI({
                     status: "天气获取失败",
                     temp: "—",
@@ -192,6 +390,8 @@ function main() {
           } else {
             elAddress.textContent = "逆地理编码失败，请稍后重试";
             console.warn("[地图选点] 逆地理编码失败:", status, result);
+            currentSelection = { lng, lat };
+            currentWeather = null;
 
             if (hasWeather) {
               setWeatherUI({
