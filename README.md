@@ -12,7 +12,11 @@
 
 1. 在高德开放平台申请 **Web 端（JS API）** Key 与 **安全密钥（securityJsCode）**。
 2. 在控制台为该 Key 配置 **HTTP Referer 白名单**，与本地访问地址一致，例如：`http://localhost:5500` 或 `http://127.0.0.1:5173`。
-3. 编辑 `js/config.js`，将 `YOUR_AMAP_KEY_HERE` 与 `YOUR_AMAP_SECURITY_JS_CODE_HERE` 替换为你的凭据（**不要**将真实凭据提交到公开仓库）。
+3. 在高德开放平台申请 **Web 服务** Key（用于天气 API）。
+4. 编辑 `js/config.js`，将下列占位符替换为你的凭据（**不要**将真实凭据提交到公开仓库）：
+   - `YOUR_AMAP_KEY_HERE`
+   - `YOUR_AMAP_SECURITY_JS_CODE_HERE`
+   - `YOUR_AMAP_WEBSERVICE_KEY_HERE`
 4. 用任意静态服务器打开本目录（双击打开 `file://` 可能受限于部分浏览器策略，建议本地 HTTP 服务）：
    - VS Code：Live Server
    - 或：`npx serve .`（在项目根目录 `lab3` 下执行）
