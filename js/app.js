@@ -33,7 +33,7 @@ function setSelectionUI(lng, lat, addressText) {
 
 function main() {
   if (typeof AMapLoader === "undefined") {
-    showHint("未加载高德 AMapLoader，请检查 index.html 中的 loader.js 引用。");
+    showHint("未加载 AMapLoader，请检查 index.html 中的 loader.js 引用。");
     return;
   }
 
